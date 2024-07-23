@@ -19,27 +19,25 @@ Lay that shit out i guess:
 `)
 
 func RenderHeader() {
-
+	fmt.Print(HEADERSTRING)
 }
 
 func ReceiveEntry() bool {
-
 	entname := "test-entry"
-
-	// scanln might be better for continuous updates
 	input := bufio.NewReader(os.Stdin)
-
 	entbytes := []byte("==================\n")
+
 	// figure out better ways to render this
 	// animations and shit perhaps
-	fmt.Print(HEADERSTRING)
 	for {
 		fmt.Print(">>> ")
+
 		line, err := input.ReadString('\n')
 		check(err)
 
 		linebite := []byte(line)
 		entbytes = append(entbytes, linebite...)
+
 		if len(linebite) == 1 && linebite[0] == 10 {
 			// EOF
 			break
@@ -47,8 +45,6 @@ func ReceiveEntry() bool {
 	}
 
 	fmt.Println(entbytes)
-	// add new line to start if file already exists
-
 	err := os.WriteFile(fmt.Sprintf("%s/%s.txt", STOREPATH, entname), entbytes, 0644)
 	check(err)
 
