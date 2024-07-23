@@ -18,6 +18,34 @@ Lay that shit out i guess:
 =====================================================
 `)
 
+type MenuLocation struct {
+	InitialStep int
+}
+
+func InitMenu() MenuLocation {
+	menu := MenuLocation{}
+	menu.InitialStep = 0
+	return menu
+}
+
+type SelectionItem struct {
+	Path     string
+	Name     string
+	Date     string
+	OnSelect func()
+}
+
+func NewSelectionItem(filename string, name string, date string, callback func()) SelectionItem {
+
+	sitem := SelectionItem{}
+	sitem.Path = fmt.Sprintf("%s/%s.txt", STOREPATH, filename)
+	sitem.Name = name
+	sitem.Date = date
+	sitem.OnSelect = callback
+
+	return sitem
+}
+
 func RenderHeader() {
 	fmt.Print(HEADERSTRING)
 }
@@ -27,9 +55,21 @@ func ReceiveEntry() bool {
 	input := bufio.NewReader(os.Stdin)
 	entbytes := []byte("==================\n")
 
+	// works for some linux distros only
+	out, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
+	check(err)
+
+	in, err := os.OpenFile("/dev/tty", os.O_RDONLY, 0)
+	check(err)
+
 	// figure out better ways to render this
 	// animations and shit perhaps
 	for {
+
+		// print in/out buffers
+		fmt.Println(int(in.Fd()))
+		fmt.Println(int(out.Fd()))
+
 		fmt.Print(">>> ")
 
 		line, err := input.ReadString('\n')
@@ -45,7 +85,7 @@ func ReceiveEntry() bool {
 	}
 
 	fmt.Println(entbytes)
-	err := os.WriteFile(fmt.Sprintf("%s/%s.txt", STOREPATH, entname), entbytes, 0644)
+	err = os.WriteFile(fmt.Sprintf("%s/%s.txt", STOREPATH, entname), entbytes, 0644)
 	check(err)
 
 	return true
