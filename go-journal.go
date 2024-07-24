@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 )
 
 // this is temp while deving
@@ -66,14 +67,25 @@ func ReceiveEntry() bool {
 	// animations and shit perhaps
 	for {
 
-		// print in/out buffers
-		fmt.Println(int(in.Fd()))
-		fmt.Println(int(out.Fd()))
+		fmt.Println(reflect.TypeOf(in))
 
 		fmt.Print(">>> ")
 
 		line, err := input.ReadString('\n')
 		check(err)
+
+		// testing tty
+		inbuff := []byte{}
+		_, err = in.Read(inbuff)
+		check(err)
+
+		fmt.Println(inbuff)
+
+		outbuff := []byte{}
+		_, err = out.Read(outbuff)
+		check(err)
+
+		fmt.Println(outbuff)
 
 		linebite := []byte(line)
 		entbytes = append(entbytes, linebite...)
