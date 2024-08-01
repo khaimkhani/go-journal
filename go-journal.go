@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"reflect"
+	"os/exec"
+	// "time"
 )
 
 // this is temp while deving
@@ -53,54 +54,70 @@ func RenderHeader() {
 
 func ReceiveEntry() bool {
 	entname := "test-entry"
+	// TEMP
 	input := bufio.NewReader(os.Stdin)
 	entbytes := []byte("==================\n")
 
 	// works for some linux distros only
-	out, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
-	check(err)
+	// out, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
+	// check(err)
 
-	in, err := os.OpenFile("/dev/tty", os.O_RDONLY, 0)
-	check(err)
+	// in, err := os.OpenFile("/dev/tty", os.O_RDONLY, 0)
+	// check(err)
+
+	quit := make(chan bool)
+	defer close(quit)
+	// go devPrintTTY(in, out, quit)
+	go devPrintTTY(quit)
 
 	// figure out better ways to render this
 	// animations and shit perhaps
 	for {
 
-		fmt.Println(reflect.TypeOf(in))
+		// fmt.Println(reflect.TypeOf(in))
 
 		fmt.Print(">>> ")
 
 		line, err := input.ReadString('\n')
 		check(err)
 
-		// testing tty
-		inbuff := []byte{}
-		_, err = in.Read(inbuff)
-		check(err)
-
-		fmt.Println(inbuff)
-
-		outbuff := []byte{}
-		_, err = out.Read(outbuff)
-		check(err)
-
-		fmt.Println(outbuff)
-
 		linebite := []byte(line)
 		entbytes = append(entbytes, linebite...)
 
 		if len(linebite) == 1 && linebite[0] == 10 {
 			// EOF
+			quit <- true
 			break
 		}
 	}
 
 	fmt.Println(entbytes)
-	err = os.WriteFile(fmt.Sprintf("%s/%s.txt", STOREPATH, entname), entbytes, 0644)
+	err := os.WriteFile(fmt.Sprintf("%s/%s.txt", STOREPATH, entname), entbytes, 0644)
 	check(err)
 
 	return true
+}
+
+func devPrintTTY(quit <-chan bool) {
+
+	// testing tty
+	fin := make([]byte, 100)
+	b := make([]byte, 1)
+	for {
+		// time.Sleep(0.01 * time.Second)
+		select {
+		case <-quit:
+			fmt.Println("quitting")
+			fmt.Println(b)
+			return
+		default:
+			os.Stdin.Read(b)
+			fin = append(fin, b...)
+		}
+
+		fmt.Println(fin)
+
+	}
 }
 
 func ReadEntry(trange ...string) error {
@@ -123,6 +140,11 @@ func check(e error) {
 }
 
 func FlagParser(f []string) {
+	// disable input buffering so we can read arrow keys in term
+	err := exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
+	// TEMP
+	// exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
+	check(err)
 	RenderHeader()
 	ReceiveEntry()
 
