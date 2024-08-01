@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"reflect"
 	// "time"
 )
 
@@ -66,9 +67,11 @@ func ReceiveEntry() bool {
 	// check(err)
 
 	quit := make(chan bool)
+	skey := make(chan string)
 	defer close(quit)
+	defer close(skey)
 	// go devPrintTTY(in, out, quit)
-	go devPrintTTY(quit)
+	go devPrintTTY(quit, skey)
 
 	// figure out better ways to render this
 	// animations and shit perhaps
@@ -98,24 +101,29 @@ func ReceiveEntry() bool {
 	return true
 }
 
-func devPrintTTY(quit <-chan bool) {
-
-	// testing tty
-	fin := make([]byte, 100)
-	b := make([]byte, 1)
+func devPrintTTY(quit <-chan bool, skey chan<- string) {
+	b := make([]byte, 3)
 	for {
-		// time.Sleep(0.01 * time.Second)
 		select {
 		case <-quit:
 			fmt.Println("quitting")
-			fmt.Println(b)
 			return
 		default:
 			os.Stdin.Read(b)
-			fin = append(fin, b...)
+			fmt.Println(b)
+			fmt.Println(reflect.TypeOf(b))
+			fmt.Println(reflect.DeepEqual(b, []uint8{27, 91, 67}))
+			switch {
+			case reflect.DeepEqual(b, RIGHT_ARROW):
+				skey <- "RA"
+			case reflect.DeepEqual(b, LEFT_ARROW):
+				skey <- "LA"
+			case reflect.DeepEqual(b, UP_ARROW):
+				skey <- "UA"
+			case reflect.DeepEqual(b, DOWN_ARROW):
+				skey <- "DA"
+			}
 		}
-
-		fmt.Println(fin)
 
 	}
 }
