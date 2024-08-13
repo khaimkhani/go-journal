@@ -61,17 +61,6 @@ func RenderHeader() {
 }
 
 func ReceiveEntry() bool {
-	entname := "test-entry"
-	// TEMP
-	input := bufio.NewReader(os.Stdin)
-	entbytes := []byte("==================\n")
-
-	// works for some linux distros only
-	// out, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
-	// check(err)
-
-	// in, err := os.OpenFile("/dev/tty", os.O_RDONLY, 0)
-	// check(err)
 
 	quit := make(chan bool)
 	skey := make(chan string)
@@ -79,9 +68,16 @@ func ReceiveEntry() bool {
 	defer close(skey)
 	// go devPrintTTY(in, out, quit)
 	go devPrintTTY(quit, skey)
+	go readStdIn(quit)
 
-	// figure out better ways to render this
-	// animations and shit perhaps
+	return true
+}
+
+func readStdIn(quit chan<- bool) {
+	entname := "test-entry"
+	input := bufio.NewReader(os.Stdin)
+	entbytes := []byte("==================\n")
+
 	for {
 
 		fmt.Print(">>> ")
@@ -103,7 +99,6 @@ func ReceiveEntry() bool {
 	err := os.WriteFile(fmt.Sprintf("%s/%s.txt", STOREPATH, entname), entbytes, 0644)
 	check(err)
 
-	return true
 }
 
 func devPrintTTY(quit <-chan bool, skey chan<- string) {
