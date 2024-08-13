@@ -21,6 +21,13 @@ Lay that shit out i guess:
 =====================================================
 `)
 
+const (
+	RIGHT_ARROW = 67
+	LEFT_ARROW  = 68
+	UP_ARROW    = 65
+	DOWN_ARROW  = 66
+)
+
 type MenuLocation struct {
 	InitialStep int
 }
@@ -77,8 +84,6 @@ func ReceiveEntry() bool {
 	// animations and shit perhaps
 	for {
 
-		// fmt.Println(reflect.TypeOf(in))
-
 		fmt.Print(">>> ")
 
 		line, err := input.ReadString('\n')
@@ -110,17 +115,17 @@ func devPrintTTY(quit <-chan bool, skey chan<- string) {
 			return
 		default:
 			os.Stdin.Read(b)
-			fmt.Println(b)
-			fmt.Println(reflect.TypeOf(b))
-			fmt.Println(reflect.DeepEqual(b, []uint8{27, 91, 67}))
+			bslice := b[:]
+			keycode := bslice[len(bslice)-1]
+			fmt.Println(keycode)
 			switch {
-			case reflect.DeepEqual(b, RIGHT_ARROW):
+			case reflect.DeepEqual(keycode, RIGHT_ARROW):
 				skey <- "RA"
-			case reflect.DeepEqual(b, LEFT_ARROW):
+			case reflect.DeepEqual(keycode, LEFT_ARROW):
 				skey <- "LA"
-			case reflect.DeepEqual(b, UP_ARROW):
+			case reflect.DeepEqual(keycode, UP_ARROW):
 				skey <- "UA"
-			case reflect.DeepEqual(b, DOWN_ARROW):
+			case reflect.DeepEqual(keycode, DOWN_ARROW):
 				skey <- "DA"
 			}
 		}
