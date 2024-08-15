@@ -60,17 +60,24 @@ func RenderHeader() {
 	fmt.Print(HEADERSTRING)
 }
 
-func ReceiveEntry() bool {
+func ReceiveEntry() {
 
 	quit := make(chan bool)
 	skey := make(chan string)
 	defer close(quit)
 	defer close(skey)
 	// go devPrintTTY(in, out, quit)
-	go devPrintTTY(quit, skey)
 	go readStdIn(quit)
+	go devPrintTTY(quit, skey)
 
-	return true
+	for {
+		select {
+		case <-quit:
+			break
+		default:
+			continue
+		}
+	}
 }
 
 func readStdIn(quit chan<- bool) {
