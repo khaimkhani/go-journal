@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"reflect"
 	// "time"
-	"runtime"
+	// "strings"
 )
 
 // this is temp while deving
@@ -27,6 +27,8 @@ const (
 	LEFT_ARROW  = 68
 	UP_ARROW    = 65
 	DOWN_ARROW  = 66
+	// concat buffer value. repeat for above for better accuracy
+	BACK_SPACE = 12700
 )
 
 type MenuLocation struct {
@@ -61,7 +63,7 @@ func RenderHeader() {
 	fmt.Print(HEADERSTRING)
 }
 
-func ReceiveEntry(gexit chan<- bool) {
+func ReceiveEntry() {
 	// control channels
 	quit := make(chan bool)
 	skey := make(chan string)
@@ -75,14 +77,10 @@ func ReceiveEntry(gexit chan<- bool) {
 	// display routines
 	// figure out how termbox does this
 
-	for {
-		select {
-		case <-quit:
-			fmt.Println("qutitting")
-			gexit <- true
-		default:
-			continue
-		}
+	select {
+	case <-quit:
+		fmt.Println("qutitting")
+		return
 	}
 }
 
@@ -124,8 +122,12 @@ func specialKeyListener(quit <-chan bool, skey chan<- string) {
 			return
 		default:
 			os.Stdin.Read(b)
-			bslice := b[:]
-			keycode := bslice[len(bslice)-1]
+			bslice := string(b[:])
+			fmt.Println(bslice)
+			fmt.Println(b)
+			//keycode = strings.Join(bslice, "")
+			keycode := ""
+			fmt.Println(bslice)
 			switch {
 			case reflect.DeepEqual(keycode, RIGHT_ARROW):
 				skey <- "RA"
@@ -137,8 +139,8 @@ func specialKeyListener(quit <-chan bool, skey chan<- string) {
 				skey <- "DA"
 			}
 		}
-
 	}
+
 }
 
 func ReadEntry(trange ...string) error {
@@ -161,21 +163,12 @@ func check(e error) {
 }
 
 func FlagParser(f []string) {
-	gexit := make(chan bool)
-
-	// disable input buffering so we can read arrow keys in term
 	err := exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
 	// might be worth experimenting with this and implementing your own buffer
 	//exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
 	check(err)
 	RenderHeader()
-	ReceiveEntry(gexit)
-	select {
-	case <-gexit:
-		fmt.Println("gexit called")
-		// os.Exit(1)
-		return
-	}
+	ReceiveEntry()
 }
 
 func main() {
@@ -186,7 +179,7 @@ func main() {
 
 	// fmt.Println(reflect.TypeOf(os.Args))
 
-	defer runtime.Goexit()
+	defer os.Exit(1)
 
 	FlagParser(os.Args[1:])
 
