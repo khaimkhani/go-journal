@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"reflect"
 	// "time"
+	"runtime"
 )
 
 // this is temp while deving
@@ -60,20 +61,25 @@ func RenderHeader() {
 	fmt.Print(HEADERSTRING)
 }
 
-func ReceiveEntry() {
-
+func ReceiveEntry(gexit chan<- bool) {
+	// control channels
 	quit := make(chan bool)
 	skey := make(chan string)
 	defer close(quit)
 	defer close(skey)
-	// go devPrintTTY(in, out, quit)
+
+	// listening routines
 	go readStdIn(quit)
-	go devPrintTTY(quit, skey)
+	go specialKeyListener(quit, skey)
+
+	// display routines
+	// figure out how termbox does this
 
 	for {
 		select {
 		case <-quit:
-			break
+			fmt.Println("qutitting")
+			gexit <- true
 		default:
 			continue
 		}
@@ -105,10 +111,11 @@ func readStdIn(quit chan<- bool) {
 	fmt.Println(entbytes)
 	err := os.WriteFile(fmt.Sprintf("%s/%s.txt", STOREPATH, entname), entbytes, 0644)
 	check(err)
+	return
 
 }
 
-func devPrintTTY(quit <-chan bool, skey chan<- string) {
+func specialKeyListener(quit <-chan bool, skey chan<- string) {
 	b := make([]byte, 3)
 	for {
 		select {
@@ -119,7 +126,6 @@ func devPrintTTY(quit <-chan bool, skey chan<- string) {
 			os.Stdin.Read(b)
 			bslice := b[:]
 			keycode := bslice[len(bslice)-1]
-			fmt.Println(keycode)
 			switch {
 			case reflect.DeepEqual(keycode, RIGHT_ARROW):
 				skey <- "RA"
@@ -155,23 +161,32 @@ func check(e error) {
 }
 
 func FlagParser(f []string) {
+	gexit := make(chan bool)
+
 	// disable input buffering so we can read arrow keys in term
 	err := exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
-	// TEMP
-	// exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
+	// might be worth experimenting with this and implementing your own buffer
+	//exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
 	check(err)
 	RenderHeader()
-	ReceiveEntry()
-
+	ReceiveEntry(gexit)
+	select {
+	case <-gexit:
+		fmt.Println("gexit called")
+		// os.Exit(1)
+		return
+	}
 }
 
 func main() {
-	// TODO import using os.Getenv() for consistency
+	// TODO import using os.Getenv() for consistecy
 	// GOBIN := "/usr/bin"
 	// STORE_FILES := "/var/lib/go-journal"
 	// fmt.Println(os.Environ())
 
 	// fmt.Println(reflect.TypeOf(os.Args))
+
+	defer runtime.Goexit()
 
 	FlagParser(os.Args[1:])
 
