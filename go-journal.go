@@ -22,13 +22,12 @@ Lay that shit out i guess:
 =====================================================
 `)
 
-const (
-	RIGHT_ARROW = 67
-	LEFT_ARROW  = 68
-	UP_ARROW    = 65
-	DOWN_ARROW  = 66
-	// concat buffer value. repeat for above for better accuracy
-	BACK_SPACE = 12700
+var (
+	RIGHT_ARROW = [3]byte{27, 91, 67}
+	LEFT_ARROW  = [3]byte{27, 91, 68}
+	UP_ARROW    = [3]byte{27, 91, 65}
+	DOWN_ARROW  = [3]byte{27, 91, 66}
+	BACK_SPACE  = [3]byte{27, 91, 67}
 )
 
 type MenuLocation struct {
@@ -121,23 +120,30 @@ func specialKeyListener(quit <-chan bool, skey chan<- string) {
 			fmt.Println("quitting")
 			return
 		default:
+			// Use Scanner here maybe
 			os.Stdin.Read(b)
-			bslice := string(b[:])
+			bslice := b[:]
+			fmt.Println(reflect.TypeOf(bslice))
 			fmt.Println(bslice)
-			fmt.Println(b)
-			//keycode = strings.Join(bslice, "")
-			keycode := ""
-			fmt.Println(bslice)
-			switch {
-			case reflect.DeepEqual(keycode, RIGHT_ARROW):
-				skey <- "RA"
-			case reflect.DeepEqual(keycode, LEFT_ARROW):
-				skey <- "LA"
-			case reflect.DeepEqual(keycode, UP_ARROW):
-				skey <- "UA"
-			case reflect.DeepEqual(keycode, DOWN_ARROW):
-				skey <- "DA"
-			}
+			keycode := bslice
+			// keycode = strings.Join(bslice, "")
+			// keycode := string(bslice)
+			fmt.Println(keycode)
+
+			// switch {
+			// case keycode == RIGHT_ARROW:
+			// 	fmt.Println("ra")
+			// 	skey <- "RA"
+			// case keycode == LEFT_ARROW:
+			// 	fmt.Println("la")
+			// 	skey <- "LA"
+			// case keycode == UP_ARROW:
+			// 	fmt.Println("ua")
+			// 	skey <- "UA"
+			// case keycode == DOWN_ARROW:
+			// 	fmt.Println("da")
+			// 	skey <- "DA"
+			// }
 		}
 	}
 
@@ -178,6 +184,7 @@ func main() {
 	// fmt.Println(os.Environ())
 
 	// fmt.Println(reflect.TypeOf(os.Args))
+	fmt.Println(reflect.TypeOf("1"))
 
 	defer os.Exit(1)
 
