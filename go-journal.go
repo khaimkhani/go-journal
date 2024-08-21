@@ -122,6 +122,12 @@ func specialKeyListener(quit <-chan bool, skey chan<- string) {
 			fmt.Println("quitting")
 			return
 		default:
+			// can do something like this
+			// os.Stdout.Write(outbuf)
+			// to display only writter characters, ignoring ^[[C type shit
+			// remember to hide char input in term
+			// also switch off after exiting program
+
 			// read 3 inputs. reset after each read
 			os.Stdin.Read(akbuf)
 			akbuf := akbuf[:]
