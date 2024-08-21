@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	//"io"
 	"os"
 	"os/exec"
 	"reflect"
@@ -113,19 +114,25 @@ func readStdIn(quit chan<- bool) {
 }
 
 func specialKeyListener(quit <-chan bool, skey chan<- string) {
-	b := make([]byte, 3)
+	akbuf := make([]byte, 3)
+	specialbuf := make([]byte, 1)
 	for {
 		select {
 		case <-quit:
 			fmt.Println("quitting")
 			return
 		default:
-			// Use Scanner here maybe
-			os.Stdin.Read(b)
-			bslice := b[:]
-			fmt.Println(reflect.TypeOf(bslice))
-			fmt.Println(bslice)
-			keycode := bslice
+			// read 3 inputs. reset after each read
+			os.Stdin.Read(akbuf)
+			akbuf := akbuf[:]
+
+			// read singular special keys
+			os.Stdin.Read(specialbuf)
+			specialbuf := specialbuf[:]
+
+			fmt.Println(akbuf)
+			fmt.Println(specialbuf)
+			keycode := akbuf
 			// keycode = strings.Join(bslice, "")
 			// keycode := string(bslice)
 			fmt.Println(keycode)
