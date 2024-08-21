@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	//"bufio"
 	"errors"
 	"fmt"
 	//"io"
@@ -70,9 +70,13 @@ func ReceiveEntry() {
 	defer close(quit)
 	defer close(skey)
 
+	// stdout channel
+	stdoutc := make(chan byte, 1)
+	defer close(stdoutc)
+
 	// listening routines
-	go readStdIn(quit)
-	go specialKeyListener(quit, skey)
+	go readStdIn(quit, stdoutc)
+	go specialKeyListener(quit, stdoutc, skey)
 
 	// display routines
 	// figure out how termbox does this
@@ -84,36 +88,29 @@ func ReceiveEntry() {
 	}
 }
 
-func readStdIn(quit chan<- bool) {
+func readStdIn(quit chan<- bool, stdoutc <-chan byte) {
+
 	entname := "test-entry"
-	input := bufio.NewReader(os.Stdin)
-	entbytes := []byte("==================\n")
+	filename := fmt.Sprintf("%s/%s.txt", STOREPATH, entname)
+
+	// might not need to reopen
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	check(err)
 
 	for {
-
-		fmt.Print(">>> ")
-
-		line, err := input.ReadString('\n')
-		check(err)
-
-		linebite := []byte(line)
-		entbytes = append(entbytes, linebite...)
-
-		if len(linebite) == 1 && linebite[0] == 10 {
-			// EOF
-			quit <- true
-			break
+		select {
+		case char, ok := <-stdoutc:
+			fmt.Println(char)
+			_, err := f.WriteString(string(char))
+			if !ok || err != nil {
+				check(err)
+			}
 		}
 	}
 
-	fmt.Println(entbytes)
-	err := os.WriteFile(fmt.Sprintf("%s/%s.txt", STOREPATH, entname), entbytes, 0644)
-	check(err)
-	return
-
 }
 
-func specialKeyListener(quit <-chan bool, skey chan<- string) {
+func specialKeyListener(quit <-chan bool, stdoutc chan<- byte, skey chan<- string) {
 	akbuf := make([]byte, 3)
 	specialbuf := make([]byte, 1)
 	for {
@@ -184,6 +181,8 @@ func check(e error) {
 func FlagParser(f []string) {
 	err := exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
 	// might be worth experimenting with this and implementing your own buffer
+	// -echo to turn off, echo to turn on
+	exec.Command("stty", "-F", "/dev/tty", "echo").Run()
 	//exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
 	check(err)
 	RenderHeader()
